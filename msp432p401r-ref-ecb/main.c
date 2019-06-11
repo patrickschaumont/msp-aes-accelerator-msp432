@@ -71,6 +71,16 @@ void main(void) {
 
     struct AES_ctx SWAES;
 
+    uint32_t i;
+    for (i=0; i<10; i++) {
+        TimerLap();
+        Cycles[i] = TimerLap();
+    }
+
+    TimerLap();
+    AES_init_ctx(&SWAES, CipherKey);
+    Cycles[0] = TimerLap();
+
     TimerLap();
     AES_init_ctx(&SWAES, CipherKey);
     Cycles[0] = TimerLap();

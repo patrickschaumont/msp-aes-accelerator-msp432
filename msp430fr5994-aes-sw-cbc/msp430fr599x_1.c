@@ -117,14 +117,14 @@ int main(void) {
 
         TimerLap();
 
+        // load previous ciphertext or IV
+        for (i=0; i<8; i++)
+            AESAXIN = k ? ((uint16_t *) DataAESencrypted)[i+(k-1)*8] : ((uint16_t *) IV)[i];
+
         for (i=0; i<8; i++)
             AESADIN = ((uint16_t *) DataAESencrypted)[i + (k & 3) * 8];
 
         while (AESASTAT & AESBUSY) ;
-
-        // load previous ciphertext or IV
-        for (i=0; i<8; i++)
-            AESAXIN = k ? ((uint16_t *) DataAESencrypted)[i+(k-1)*8] : ((uint16_t *) IV)[i];
 
         for (i=0; i<8; i++)
             ((uint16_t *) DataAESdecrypted)[i + (k & 3) * 8] = AESADOUT;

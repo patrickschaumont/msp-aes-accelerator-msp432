@@ -22,13 +22,19 @@
 
 static uint32_t currentInt;
 
-uint32_t  TimerLap() {
-    static uint32_t  previousSnap;
-    uint32_t  currentSnap, ret;
+uint32_t TimerLap() {
+    static unsigned int previousSnap;
+    unsigned currentSnap;
+    uint32_t ret;
+    Timer_A_disableInterrupt(TIMER_A1_BASE);
     currentSnap = Timer_A_getCounterValue(TIMER_A1_BASE);
-    ret = (currentSnap - previousSnap) + (currentInt << 16);
+    if (currentSnap < previousSnap)
+        ret = ((uint16_t) (currentSnap - previousSnap)) + ((currentInt-1) << 16);
+    else
+       ret = ((uint16_t) (currentSnap - previousSnap)) + (currentInt << 16);
+    currentInt = 0;
     previousSnap = currentSnap;
-    currentInt   = 0;
+    Timer_A_enableInterrupt(TIMER_A1_BASE);
     return ret;
 }
 
@@ -64,10 +70,16 @@ __interrupt void TIMER1_A1_ISR (void) {
     }
 }
 
-volatile uint8_t Data[16]             = { 0x6B, 0xC1, 0xBE, 0xE2, 0x2E, 0x40, 0x9F, 0x96, 0xE9, 0x3D, 0x7E, 0x11, 0x73, 0x93, 0x17, 0x2A};
+uint8_t Data[16]             = { 0x6B, 0xC1, 0xBE, 0xE2, 0x2E, 0x40, 0x9F, 0x96, 0xE9, 0x3D, 0x7E, 0x11, 0x73, 0x93, 0x17, 0x2A};
 uint8_t CipherKey[16]                 = { 0x2B, 0x7E, 0x15, 0x16, 0x28, 0xAE, 0xD2, 0xA6, 0xAB, 0xF7, 0x15, 0x88, 0x09, 0xCF, 0x4F, 0x3C};
-volatile uint8_t DataAESencrypted[16] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
-volatile uint32_t Cycles[10];
+uint8_t DataAESencrypted[16] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+uint32_t Cycles[10];
+
+unsigned long mymul(unsigned a, unsigned b) {
+  unsigned long r;
+  r = (unsigned long) a * b;
+  return r;
+}
 
 int main(void) {
     WDTCTL = WDTPW | WDTHOLD;
@@ -78,17 +90,23 @@ int main(void) {
     struct AES_ctx SWAES;
 
     TimerLap();
-    AES_init_ctx(&SWAES, CipherKey);
     Cycles[0] = TimerLap();
 
     TimerLap();
-    AES_ECB_encrypt(&SWAES, Data);
+    AES_init_ctx(&SWAES, CipherKey);
     Cycles[1] = TimerLap();
+
+    TimerLap();
+    AES_ECB_encrypt(&SWAES, Data);
+    Cycles[2] = TimerLap();
+
     memcpy(DataAESencrypted, Data, 16);
 
     TimerLap();
     AES_ECB_decrypt(&SWAES, DataAESencrypted);
-    Cycles[2] = TimerLap();
+    Cycles[3] = TimerLap();
+
+    Cycles[4] = currentInt;
 
     while (1) ;
 }

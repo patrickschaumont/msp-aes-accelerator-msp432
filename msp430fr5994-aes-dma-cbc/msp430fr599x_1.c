@@ -119,8 +119,6 @@ int main(void) {
     // Enable Channel 1
     DMA1CTL |= DMAEN;
 
-    Cycles[1] = TimerLap();
-
     TimerLap();
 
     AESACTL1 = NUMBLOCKS;
@@ -128,15 +126,13 @@ int main(void) {
     while (!(DMA0CTL & DMAIFG)) ;
     DMAIV |= 0;
 
-    Cycles[2] = TimerLap();
+    Cycles[1] = TimerLap(); // 8 Blocks
 
     // Disable DMA
     DMA0CTL = DMA0CTL & (~DMAEN);
     DMA1CTL = DMA1CTL & (~DMAEN);
 
     //----------------------- Decryption
-
-    TimerLap();
 
     // Reset AES
     AESACTL0=AESSWRST;
@@ -227,12 +223,10 @@ int main(void) {
     // Channel 0 Destination Address
     __data20_write_long((unsigned long)&DMA0DA, (unsigned long)&AESAXIN);
 
-    Cycles[3] = TimerLap();
+    TimerLap();
 
     // Channel 0 Size
     DMA0SZ = (NUMBLOCKS-1)*8;
-
-    TimerLap();
 
     // Enable Channel 0
     DMA0CTL |= DMAEN;
@@ -240,7 +234,7 @@ int main(void) {
     // Wait for end of DMA
     while(!(DMA1CTL & DMAIFG));
 
-    Cycles[4] = TimerLap();
+    Cycles[2] = TimerLap(); // time for seven blocks
 
     // Disable DMA
     DMA0CTL = DMA0CTL & (~DMAEN);

@@ -77,6 +77,7 @@ int main(void) {
     //      12                          1
     //      13                          2
 
+
     // DMA Triggers
     DMACTL0 = DMA0TSEL_11 | DMA1TSEL_12;
 
@@ -102,8 +103,9 @@ int main(void) {
     // Enable Channel 1
     DMA1CTL |= DMAEN;
 
-    TimerLap();
     AESACTL1 = NUMBLOCKS;
+
+    TimerLap();
 
     while (!(DMA0CTL & DMAIFG)) ;
     DMAIV |= 0;
@@ -121,8 +123,6 @@ int main(void) {
     // select key length 128 bit
     AESACTL0 = (AESACTL0 & ~AESKL) | AESKL_0;
 
-    TimerLap();
-
     // select decryption (generate roundkeys)
     AESACTL0 = (AESACTL0 & ~AESOP) | AESOP_2;
 
@@ -133,8 +133,6 @@ int main(void) {
 
     // select decryption (use offline roundkeys)
     AESACTL0 = (AESACTL0 & ~AESOP) | AESOP_3;
-
-    Cycles[3] = TimerLap();
 
     // select ECB
     AESACTL0 = (AESACTL0 & ~AESCM) | AESCM__ECB;
@@ -170,12 +168,13 @@ int main(void) {
     DMA1CTL |= DMAEN;
 
     TimerLap();
+
     AESACTL1 = NUMBLOCKS;
 
     while (!(DMA0CTL & DMAIFG)) ;
     DMAIV |= 0;
 
-    Cycles[4] = TimerLap();
+    Cycles[3] = TimerLap();
 
     // for GPIO LED
     P1OUT &= ~BIT0;                         // Clear P1.0 output latch for a defined power-on state

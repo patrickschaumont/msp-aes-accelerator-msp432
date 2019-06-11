@@ -21,14 +21,21 @@
 // ct     7B0C785E 27E8AD3F 82232071 04725DD4
 
 static uint32_t currentInt;
+static uint32_t currentIntTotal;
 
-uint32_t  TimerLap() {
-    static uint32_t  previousSnap;
-    uint32_t  currentSnap, ret;
+uint32_t TimerLap() {
+    static unsigned int previousSnap;
+    unsigned currentSnap;
+    uint32_t ret;
+    Timer_A_disableInterrupt(TIMER_A1_BASE);
     currentSnap = Timer_A_getCounterValue(TIMER_A1_BASE);
-    ret = (currentSnap - previousSnap) + (currentInt << 16);
+    if (currentSnap < previousSnap)
+        ret = ((uint16_t) (currentSnap - previousSnap)) + ((currentInt-1) << 16);
+    else
+       ret = ((uint16_t) (currentSnap - previousSnap)) + (currentInt << 16);
+    currentInt = 0;
     previousSnap = currentSnap;
-    currentInt   = 0;
+    Timer_A_enableInterrupt(TIMER_A1_BASE);
     return ret;
 }
 
@@ -42,6 +49,8 @@ void initTimer() {
     Timer_A_initContinuousMode(TIMER_A1_BASE, &initContParam);
     Timer_A_startCounter(TIMER_A1_BASE, TIMER_A_CONTINUOUS_MODE );
     currentInt = 0;
+    currentIntTotal = 0;
+    Timer_A_enableInterrupt(TIMER_A1_BASE);
 }
 
 #pragma vector=TIMER1_A1_VECTOR
@@ -59,6 +68,7 @@ __interrupt void TIMER1_A1_ISR (void) {
         case 14:
             //Toggle P1.0                    // overflow
             currentInt = currentInt + 1;
+            currentIntTotal = currentIntTotal + 1;
             break;
         default: break;
     }
@@ -84,8 +94,11 @@ int main(void) {
     struct AES_ctx SWAES;
 
     TimerLap();
-    AES_init_ctx_iv(&SWAES, CipherKey, IV);
     Cycles[0] = TimerLap();
+
+    TimerLap();
+    AES_init_ctx_iv(&SWAES, CipherKey, IV);
+    Cycles[1] = TimerLap();
 
     // DEMO AND PERF EVAL OF CBC AES-128 ENCRYPTION
 
@@ -104,7 +117,7 @@ int main(void) {
 
     TimerLap();
     AES_CBC_encrypt_buffer(&SWAES, Data, 64);
-    Cycles[1] = TimerLap();
+    Cycles[2] = TimerLap();
 
     memcpy(DataAESencrypted, Data, 64);
 
@@ -112,7 +125,8 @@ int main(void) {
 
     TimerLap();
     AES_CBC_decrypt_buffer(&SWAES, DataAESencrypted, 64);
-    Cycles[2] = TimerLap();
+    Cycles[3] = TimerLap();
 
-    while (1) ;
+    while (1)
+        Cycles[5] = currentIntTotal;
 }

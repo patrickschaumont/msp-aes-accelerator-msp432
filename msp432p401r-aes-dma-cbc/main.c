@@ -3,6 +3,7 @@
 
 #include <stdint.h>
 #include <stdio.h>
+#include <string.h>
 
 unsigned TimerLap() {
     static unsigned int previousSnap;

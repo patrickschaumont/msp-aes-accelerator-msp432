@@ -66,6 +66,7 @@ int main(void) {
     uint8_t i;
     for (i=0; i<8; i++)
         AESAKEY = ((uint16_t *) CipherKey)[i];
+    while (AESASTAT & AESBUSY) ;
     Cycles[1] = TimerLap();
 
     uint16_t k;
@@ -81,7 +82,7 @@ int main(void) {
         for (i=0; i<8; i++)
             ((uint16_t *) DataAESencrypted)[i] = AESADOUT;
 
-        Cycles[2 + (k & 3)] = TimerLap();
+        Cycles[2] = TimerLap();
     }
 
     // -------------------- Decryption
@@ -102,10 +103,10 @@ int main(void) {
         AESAKEY = ((uint16_t *) CipherKey)[i];
     while (AESASTAT & AESBUSY) ;
 
+    Cycles[6] = TimerLap();
+
     // select decryption (use offline roundkeys)
     AESACTL0 = (AESACTL0 & ~AESOP) | AESOP_3;
-
-    Cycles[6] = TimerLap();
 
     AESASTAT |= AESKEYWR;
 

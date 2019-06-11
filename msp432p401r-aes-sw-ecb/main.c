@@ -80,6 +80,7 @@ void main(void) {
     uint32_t i;
     for (i=0; i<8; i++)
         AES256->KEY = ((uint16_t *) CipherKey)[i];
+    while (AES256->STAT & AES256_STAT_BUSY) ;
     cycles = TimerLap();
 
     printf("Cycles Key Load %d\n", cycles);
@@ -88,7 +89,8 @@ void main(void) {
     for (k=0; k<4; k++) {
         TimerLap();
         for (i=0; i<8; i++)
-            AES256->DIN = ((uint16_t *) Data)[i+k*8];
+//            AES256->DIN = ((uint16_t *) Data)[i+k*8];
+        AES256->DIN = ((uint16_t *) Data)[i];
 
         while (AES256->STAT & AES256_STAT_BUSY) ;
 
