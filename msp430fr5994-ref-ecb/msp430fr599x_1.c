@@ -108,5 +108,25 @@ int main(void) {
 
     Cycles[4] = currentInt;
 
-    while (1) ;
+    // for GPIO LED
+    P1OUT &= ~BIT0;                         // Clear P1.0 output latch for a defined power-on state
+    P1DIR |= BIT0;                          // Set P1.0 to output direction
+    PM5CTL0 &= ~LOCKLPM5;                   // Disable the GPIO power-on default high-impedance mode
+                                            // to activate previously configured port settings
+    P1OUT = 0; // clear LED
+
+    uint32_t k;
+    while (1) {
+
+        for (k=0; k<128; k++) {
+            AES_ECB_encrypt(&SWAES, Data);
+        }
+
+           P1OUT ^= BIT0;                      // Toggle LED
+           __delay_cycles(50000);
+           P1OUT ^= BIT0;                      // Toggle LED
+
+           __delay_cycles(50000);
+
+    }
 }

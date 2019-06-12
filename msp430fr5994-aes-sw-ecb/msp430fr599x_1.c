@@ -143,14 +143,12 @@ int main(void) {
               ((uint16_t *) DataAESencrypted)[i] = AESADOUT;
         }
 
-        for (k=0; k<1024; k++) {
-           P1OUT ^= BIT0;                      // Toggle LED
-           __delay_cycles(100);
+        P1OUT ^= BIT0;                      // Toggle LED
+        __delay_cycles(50000);
            P1OUT ^= BIT0;                      // Toggle LED
 
-           __delay_cycles(1000);
+        __delay_cycles(50000);
         }
 
-    }
 
 }

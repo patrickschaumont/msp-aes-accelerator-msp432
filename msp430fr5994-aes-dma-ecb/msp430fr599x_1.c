@@ -22,6 +22,32 @@ void initTimer() {
     Timer_A_startCounter(TIMER_A1_BASE, TIMER_A_CONTINUOUS_MODE );
 }
 
+#if defined(__TI_COMPILER_VERSION__) || defined(__IAR_SYSTEMS_ICC__)
+#pragma vector=DMA_VECTOR
+__interrupt void DMA_ISR(void)
+#elif defined(__GNUC__)
+void __attribute__ ((interrupt(DMA_VECTOR))) DMA_ISR (void)
+#else
+#error Compiler not supported!
+#endif
+{
+  switch(__even_in_range(DMAIV,16))
+  {
+    case 0: break;
+    case 2:                                 // DMA0IFG = DMA Channel 0
+        __bic_SR_register_on_exit(LPM1_bits );
+      break;
+    case 4: break;                          // DMA1IFG = DMA Channel 1
+    case 6: break;                          // DMA2IFG = DMA Channel 2
+    case 8: break;                          // DMA3IFG = DMA Channel 3
+    case 10: break;                         // DMA4IFG = DMA Channel 4
+    case 12: break;                         // DMA5IFG = DMA Channel 5
+    case 14: break;                         // DMA6IFG = DMA Channel 6
+    case 16: break;                         // DMA7IFG = DMA Channel 7
+    default: break;
+  }
+}
+
 uint8_t CipherKey[16] = { 0x2B, 0x7E, 0x15, 0x16, 0x28, 0xAE, 0xD2, 0xA6, 0xAB, 0xF7, 0x15, 0x88, 0x09, 0xCF, 0x4F, 0x3C};
 
 #define NUMBLOCKS 8
@@ -90,6 +116,8 @@ int main(void) {
     // Channel 0 Size
     DMA0SZ = NUMBLOCKS*8;
     // Enable Channel 0
+    DMA0CTL &= ~DMAIFG;
+    DMA0CTL |= DMAIE;
     DMA0CTL |= DMAEN;
 
     // Configure Channel 1
@@ -107,8 +135,7 @@ int main(void) {
 
     TimerLap();
 
-    while (!(DMA0CTL & DMAIFG)) ;
-    DMAIV |= 0;
+    __bis_SR_register(LPM1_bits + GIE);
 
     Cycles[2] = TimerLap();
 
@@ -154,6 +181,8 @@ int main(void) {
     // Channel 0 Size
     DMA0SZ = NUMBLOCKS*8;
     // Enable Channel 0
+    DMA0CTL &= ~DMAIFG;
+    DMA0CTL |= DMAIE;
     DMA0CTL |= DMAEN;
 
     // Configure Channel 1
@@ -171,8 +200,7 @@ int main(void) {
 
     AESACTL1 = NUMBLOCKS;
 
-    while (!(DMA0CTL & DMAIFG)) ;
-    DMAIV |= 0;
+    __bis_SR_register(LPM1_bits + GIE);
 
     Cycles[3] = TimerLap();
 
@@ -193,6 +221,8 @@ int main(void) {
           __data20_write_long((unsigned long)&DMA0SA, (unsigned long)&AESADOUT);
           __data20_write_long((unsigned long)&DMA0DA, (unsigned long)DataAESdecrypted);
           DMA0SZ = NUMBLOCKS*8;
+          DMA0CTL &= ~DMAIFG;
+          DMA0CTL |= DMAIE;
           DMA0CTL |= DMAEN;
 
           DMA1CTL = DMADT_0 | DMALEVEL | DMASRCINCR_3 | DMADSTINCR_0;
@@ -203,18 +233,16 @@ int main(void) {
 
           AESACTL1 = NUMBLOCKS;
 
-          while (!(DMA0CTL & DMAIFG)) ;
-          DMAIV |= 0;
+          __bis_SR_register(LPM1_bits + GIE);
         }
 
-        for (k=0; k<1024; k++) {
-           P1OUT ^= BIT0;                      // Toggle LED
-           __delay_cycles(100);
+        P1OUT ^= BIT0;                      // Toggle LED
+        __delay_cycles(50000);
            P1OUT ^= BIT0;                      // Toggle LED
 
-           __delay_cycles(1000);
-        }
+        __delay_cycles(50000);
 
     }
 
 }
+
